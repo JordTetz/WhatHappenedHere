@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Display a web map using an alternate projection</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+    <style>
+
+    @import url('https://fonts.googleapis.com/css2?family=Berkshire+Swash&family=Spicy+Rice&display=swap');
+
+    html, body { margin: 0; padding: 0; height: 100%; font-size: 100%}
+    #container{display: block; height: 100%}
+    #section2{
+        display: flex;
+        height: 90%;
+    }
+    #map { 
+        box-sizing: border-box;
+        flex-grow: 1;
+        border-top: 7px solid #FFA400;
+        border-bottom: 7px solid #FFA400;
+        border-right: 7px solid #FFA400;
+    }
+    #heading{
+        box-sizing: border-box;
+        height: 10%; 
+        background-color: #222E50;
+        color: #BCD8C1;
+        font-family: "Berkshire Swash", sans-serif;
+        font-size: 30px;
+        padding: 20px;
+    }
+
+    #heading em{
+        color:#FFA400;
+    }
+
+    #sidebar{
+        box-sizing: border-box;
+        width:350px;
+        flex-shrink: 0;
+        height: 100%;
+        padding: 30px;
+        background-color: #BCD8C1;
+        color: #222E50;
+        font-family: "Georgia", "Times New Roman", "serif";
+        text-align: left;
+        border-top: 7px solid #FFA400;
+        border-bottom: 7px solid #FFA400;
+    }
+    #sidebar h2{
+        font-size: 2.5 em;
+    }
+    #sidebar p{
+        font-size: 1.5 em;
+    }
+
+    .marker {
+        background-image: url('Marker.png');
+        background-size: cover;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: width 0.3s ease, height 0.3s ease;
+    }
+
+    img {
+        width: 100%;
+        height: auto;
+    }
+
+    .description-container {
+        display: flex;
+        align-items: center;
+        margin-top:10px;
+    }
+
+    .icon {
+        width: 20px; /* Adjust the size as needed */
+        height: 20px; /* Adjust the size as needed */
+        margin-right: 10px; /* Adjust the spacing as needed */
+    }
+
+    .description {
+        margin: 0; /* Remove default margin if necessary */
+    }
+
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="heading">What Happened Here<em>?</em></div> 
+            <div id="section2">
+                <div id="map" style= "width: 100%; height: 100%"></div>
+                <div id="sidebar"><h2> Click on a point for more information! </h2></div>
+            </div>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoidGV0enkiLCJhIjoiY2x4MmJyODRmMGtwMDJpcHRjOWthZnJsayJ9.yJA9UOrXdf_AK10n1_f8Tg';
+        
+        const map = new mapboxgl.Map({
+            container: 'map',
+            // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [0, 0],
+            zoom: 1,
+            projection: 'mercator' // starting projection
+        });
+
+        const geojson = {
+            type: 'FeatureCollection',
+            features: [
+            {type:'Feature', geometry: { type: 'Point', coordinates:[31.13422,  29.97915]}, properties: { title: 'Great Pyramid of Giza', date: -2559, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Kheops-Pyramid.jpg', link: 'https://en.wikipedia.org/wiki/Great_Pyramid_of_Giza' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.4275,  32.5355]}, properties: { title: 'Hanging Gardens of Babylon', date: -600, image: 'https://upload.wikimedia.org/wikipedia/commons/a/ae/Hanging_Gardens_of_Babylon.jpg', link: 'https://en.wikipedia.org/wiki/Hanging_Gardens_of_Babylon' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[29.885,  31.214167]}, properties: { title: 'Lighthouse of Alexandria', date: -278, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Lighthouse%20-%20Thiersch.png', link: 'https://en.wikipedia.org/wiki/Lighthouse_of_Alexandria' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[28.227778,  36.451111]}, properties: { title: 'Colossus of Rhodes', date: -283, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Colosse%20de%20Rhodes%20%28Barclay%29.jpg', link: 'https://en.wikipedia.org/wiki/Colossus_of_Rhodes' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[27.363889,  37.949722]}, properties: { title: 'Temple of Artemis', date: -550, image: 'https://upload.wikimedia.org/wikipedia/commons/1/1d/Miniaturk_009.jpg', link: 'https://en.wikipedia.org/wiki/Temple_of_Artemis' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[21.63,  37.637861111]}, properties: { title: 'Statue of Zeus at Olympia', date: -430, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Le%20Jupiter%20Olympien%20ou%20l%27art%20de%20la%20sculpture%20antique.jpg', link: 'https://en.wikipedia.org/wiki/Statue_of_Zeus_at_Olympia' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[27.424097,  37.037942]}, properties: { title: 'Mausoleum at Halicarnassus', date: -350, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20ruins%20of%20the%20Mausoleum%20at%20Halicarnassus.jpg', link: 'https://en.wikipedia.org/wiki/Mausoleum_at_Halicarnassus' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.516666666,  48.7]}, properties: { title: 'Battle of Stalingrad', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Liberation%20of%20Stalingrad%20by%20Abram%20Krichevsky%20%28ID%2032407906%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Stalingrad' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[4.412222222,  50.678055555]}, properties: { title: 'Battle of Waterloo', date: 1815, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Waterloo%201815.PNG', link: 'https://en.wikipedia.org/wiki/Battle_of_Waterloo' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-157.95,  21.365]}, properties: { title: 'Attack on Pearl Harbor', date: 1941, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/USS%20SHAW%20exploding%20Pearl%20Harbor%20Nara%2080-G-16871%202.jpg', link: 'https://en.wikipedia.org/wiki/Attack_on_Pearl_Harbor' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[0.4875,  50.911944444]}, properties: { title: 'Battle of Hastings', date: 1066, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bayeux%20Tapestry%20scene57%20Harold%20death.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Hastings' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[22.536944444,  38.795833333]}, properties: { title: 'Battle of Thermopylae', date: -479, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Thermopylae%20and%20movements%20to%20Salamis%2C%20480%20BC.gif', link: 'https://en.wikipedia.org/wiki/Battle_of_Thermopylae' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[28.935,  41.03]}, properties: { title: 'Fall of Constantinople', date: 1453, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Le%20si%C3%A8ge%20de%20Constantinople%20%281453%29%20by%20Jean%20Le%20Tavernier%20after%201455.jpg', link: 'https://en.wikipedia.org/wiki/Fall_of_Constantinople' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-6.2,  36.25]}, properties: { title: 'Battle of Trafalgar', date: 1805, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20Battle%20of%20Trafalgar%2C%2021%20October%201805-%20Beginning%20of%20the%20Action%20RMG%20BHC0548.tiff', link: 'https://en.wikipedia.org/wiki/Battle_of_Trafalgar' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-2.0,  54.0]}, properties: { title: 'Battle of Britain', date: 1940, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Heinkel%20He%20111%20over%20Wapping%2C%20East%20London.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Britain' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[23.978333333,  38.118055555]}, properties: { title: 'Battle of Marathon', date: -489, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Scene%20of%20the%20Battle%20of%20Marathon.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Marathon' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[38.766666666,  23.733333333]}, properties: { title: 'Battle of Badr', date: 624, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/%D8%BA%D8%B2%D9%88%D9%87%20%D8%A8%D8%AF%D8%B1.ar.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Badr' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[13.376111111,  52.518611111]}, properties: { title: 'Battle of Berlin', date: 1945, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bundesarchiv%20B%20145%20Bild-P054320%2C%20Berlin%2C%20Brandenburger%20Tor%20und%20Pariser%20Platz.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Berlin' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[16.7625,  49.128055555]}, properties: { title: 'Battle of Austerlitz', date: 1805, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/La%20bataille%20d%27Austerlitz.%202%20decembre%201805%20%28Fran%C3%A7ois%20G%C3%A9rard%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Austerlitz' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[36.1,  51.7]}, properties: { title: 'Battle of Kursk', date: 1943, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bundesarchiv%20Bild%20101III-Zschaeckel-206-35%2C%20Schlacht%20um%20Kursk%2C%20Panzer%20VI%20%28Tiger%20I%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Kursk' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[2.6975,  50.015555555]}, properties: { title: 'Battle of the Somme', date: 1916, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/British%20Mark%20I%20male%20tank%20Somme%2025%20September%201916.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Somme' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-0.6,  49.34]}, properties: { title: 'Normandy landings', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Into%20the%20Jaws%20of%20Death%2023-0455M%20edit.jpg', link: 'https://en.wikipedia.org/wiki/Normandy_landings' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[5.421944444,  49.208055555]}, properties: { title: 'Battle of Verdun', date: 1916, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Verdun%20and%20Vincinity%20-%20Map.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Verdun' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[21.3,  38.2]}, properties: { title: 'Battle of Lepanto', date: 1571, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Lepanto%201571.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Lepanto' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[0.68916667,  47.39361111]}, properties: { title: 'Battle of Tours', date: 732, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Steuben%20-%20Bataille%20de%20Poitiers.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Tours' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.09444444,  53.48333333]}, properties: { title: 'Battle of Grunwald', date: 1410, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Vitaut%20gruenwald%20matejka.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Grunwald' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[18.647222222,  45.941388888]}, properties: { title: 'Battle of Mohacs', date: 1526, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Than%20M%C3%B3r%20Moh%C3%A1csi%20csata.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Moh%C3%A1cs' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.725,  38.925]}, properties: { title: 'Battle of Actium', date: -30, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Castro%20Battle%20of%20Actium.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Actium' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[12.64,  51.25]}, properties: { title: 'Battle of Leipzig', date: 1813, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Karte%20Voelkerschlacht%20bei%20Leipzig%2018%20Oktober%201813.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Leipzig' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[37.632222222,  55.752222222]}, properties: { title: 'Battle of Moscow', date: 1941, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/RIAN%20archive%20887721%20Defense%20of%20Moscow.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Moscow' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-178.0,  30.0]}, properties: { title: 'Battle of Midway', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Aerial%20view%20of%20Midway%20Atoll%20on%2024%20November%201941%20%2880-G-451086%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Midway' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[16.373064,  48.20833]}, properties: { title: 'Battle of Vienna', date: 1683, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Juliusz%20Kossak%20Sobieski%20pod%20Wiedniem.jpeg', link: 'https://en.wikipedia.org/wiki/Battle_of_Vienna' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[141.32,  24.78]}, properties: { title: 'Battle of Iwo Jima', date: 1945, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Stars%20and%20Stripes%20on%20Mount%20Suribachi%20%28Iwo%20Jima%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Iwo_Jima' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[23.56666667,  37.95138889]}, properties: { title: 'Battle of Salamis', date: -479, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20salamis.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Salamis' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[8.129444444,  52.408055555]}, properties: { title: 'Battle of the Teutoburg Forest', date: 9, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Varus01.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Teutoburg_Forest' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[2.141388888,  50.463333333]}, properties: { title: 'Battle of Agincourt', date: 1415, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Agincourt%2C%20St.%20Alban%27s%20Chronicle%20by%20Thomas%20Walsingham.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Agincourt' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[42.539166666,  39.144722222]}, properties: { title: 'Battle of Manzikert', date: 1071, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/131%20Bataille%20de%20Malazgirt.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Manzikert' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[16.1325,  41.306388888]}, properties: { title: 'Battle of Cannae', date: -215, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Hannibal%20route%20of%20invasion.gif', link: 'https://en.wikipedia.org/wiki/Battle_of_Cannae' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.816666666,  55.516666666]}, properties: { title: 'Battle of Borodino', date: 1812, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Borodino-Desarno-Large.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Borodino' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[21.12,  42.63]}, properties: { title: 'Battle of Kosovo', date: 1389, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Kosovo%2C%20Adam%20Stefanovi%C4%87%2C%201870.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Kosovo' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[39.611667,  24.503333]}, properties: { title: 'Battle of Uhud', date: 625, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20Prophet%20Muhammad%20and%20the%20Muslim%20Army%20at%20the%20Battle%20of%20Uhud.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Uhud' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[43.25,  36.36]}, properties: { title: 'Battle of Gaugamela', date: -330, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Gaugamela.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Gaugamela' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.459555555,  32.798305555]}, properties: { title: 'Battle of Hattin', date: 1187, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Hattin%20Estoire%20d%27Eracles.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Hattin' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[3.383333333,  49.016666666]}, properties: { title: 'First Battle of the Marne', date: 1914, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/French%20soldiers%20ditch%201914.jpg', link: 'https://en.wikipedia.org/wiki/First_Battle_of_the_Marne' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[34.552777777,  49.631388888]}, properties: { title: 'Battle of Poltava', date: 1709, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Marten%27s%20Poltava.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Poltava' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[103.015555555,  21.386944444]}, properties: { title: 'Battle of Dien Bien Phu', date: 1954, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Dien%20Bien%20Phu%20map.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Dien_Bien_Phu' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[128.0,  26.5]}, properties: { title: 'Battle of Okinawa', date: 1945, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Okinawa%2001.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Okinawa' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-77.225833333,  39.811388888]}, properties: { title: 'Battle of Gettysburg', date: 1863, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Thure%20de%20Thulstrup%20-%20L.%20Prang%20and%20Co.%20-%20Battle%20of%20Gettysburg%20-%20Restoration%20by%20Adam%20Cuerden%20%28cropped%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Gettysburg' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[4.5,  49.0]}, properties: { title: 'Battle of the Catalaunian Plains', date: 451, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/De%20Neuville%20-%20The%20Huns%20at%20the%20Battle%20of%20Chalons.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Catalaunian_Plains' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.954722222,  32.814166666]}, properties: { title: 'Battle of the Yarmuk', date: 636, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/11Day-6-muslims-attack-phase-1-mohammad%20adil%20rais.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Yarmuk' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[9.449166666,  36.298888888]}, properties: { title: 'Battle of Zama', date: -201, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Cornelis%20Cort%20-%20The%20Battle%20of%20Zama%20-%201990.563%20-%20Art%20Institute%20of%20Chicago.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Zama' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.335,  33.3475]}, properties: { title: 'Siege of Baghdad', date: 1258, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bagdad1258.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Baghdad' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[88.25,  23.8]}, properties: { title: 'Battle of Plassey', date: 1757, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Clive.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Plassey' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[5.9,  56.7]}, properties: { title: 'Battle of Jutland', date: 1916, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Map%20of%20the%20Battle%20of%20Jutland%2C%201916.svg', link: 'https://en.wikipedia.org/wiki/Battle_of_Jutland' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.031388888,  32.615277777]}, properties: { title: 'Battle of Karbala', date: 680, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Karbala.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Karbala' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-0.9125,  53.9925]}, properties: { title: 'Battle of Stamford Bridge', date: 1066, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Arbo%20-%20Battle%20of%20Stamford%20Bridge%20%281870%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Stamford_Bridge' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[36.211109,  36.837894]}, properties: { title: 'Battle of Issus', date: -332, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Albrecht%20Altdorfer%20-%20Schlacht%20bei%20Issus%20%28Alte%20Pinakothek%2C%20M%C3%BCnchen%29%20-%20Google%20Art%20Project.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Issus' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-98.486111111,  29.425555555]}, properties: { title: 'Battle of the Alamo', date: 1836, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/FalloftheAlamo.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Alamo' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[14.518333333,  35.891944444]}, properties: { title: 'Great Siege of Malta', date: 1565, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Siege%20of%20malta%201.jpg', link: 'https://en.wikipedia.org/wiki/Great_Siege_of_Malta' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[32.95,  40.15]}, properties: { title: 'Battle of Ankara', date: 1402, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Ankara.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Ankara' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[38.6535,  53.6525]}, properties: { title: 'Battle of Kulikovo', date: 1380, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Kulikovo%20lubok.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Kulikovo' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-3.937777777,  56.093333333]}, properties: { title: 'Battle of Bannockburn', date: 1314, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Bannockburn%20-%20Bruce%20addresses%20troops.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Bannockburn' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[1.887777777,  50.256388888]}, properties: { title: 'Battle of Crecy', date: 1346, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20crecy%20froissart.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Cr%C3%A9cy' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[4.50027778,  47.53722222]}, properties: { title: 'Battle of Alesia', date: -51, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/SiegeAlesia.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Alesia' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[2.376819444,  51.0343]}, properties: { title: 'Battle of Dunkirk', date: 1940, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/British%20gunner%20beach%20dunkirk.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Dunkirk' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[0.39,  46.54]}, properties: { title: 'Battle of Poitiers', date: 1356, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle-poitiers%281356%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Poitiers' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[36.498028,  34.555487]}, properties: { title: 'Battle of Kadesh', date: -1273, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Ramses%20II%20at%20Kadesh.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Kadesh' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.134444444,  53.495833333]}, properties: { title: 'Battle of Tannenberg', date: 1914, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/BattleOfTannenberg1.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Tannenberg' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[23.318,  38.24]}, properties: { title: 'Battle of Plataea', date: -478, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Scene%20of%20the%20Battle%20of%20Plataea.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Plataea' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[69.166666666,  34.5]}, properties: { title: 'Fall of Kabul (2021)', date: 2021, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Crowds%20in%20front%20of%20Kabul%20International%20Airport.jpg', link: 'https://en.wikipedia.org/wiki/Fall_of_Kabul_(2021)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[39.6,  24.4667]}, properties: { title: 'Battle of the Trench', date: 627, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Trench.jpeg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Trench' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.357,  32.55]}, properties: { title: 'Battle of Ain Jalut', date: 1260, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Campaign%20of%20the%20Battle%20of%20Ain%20Jalut%201260.svg', link: 'https://en.wikipedia.org/wiki/Battle_of_Ain_Jalut' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[49.852095,  40.372934]}, properties: { title: 'Black January', date: 1990, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20tragedy%20of%20January%2020.jpg', link: 'https://en.wikipedia.org/wiki/Black_January' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[73.638888888,  32.827777777]}, properties: { title: 'Battle of the Hydaspes', date: -325, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Alexander%20unhorsing%20Porrus%20-%20British%20Library%20Royal%20MS%2020%20B%20xx%20f53r%20%28detail%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Hydaspes' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[118.59,  47.730277777]}, properties: { title: 'Battles of Khalkhin Gol', date: 1939, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/SovietArmouredVehicle.jpg', link: 'https://en.wikipedia.org/wiki/Battles_of_Khalkhin_Gol' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[8.683333333,  44.883333333]}, properties: { title: 'Battle of Marengo', date: 1800, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Lejeune%20-%20Bataille%20de%20Marengo.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Marengo' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-107.428888888,  45.565]}, properties: { title: 'Battle of the Little Bighorn', date: 1876, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Little-bighorn-memorial-sculpture-2.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Little_Bighorn' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[116.213056,  39.849167]}, properties: { title: 'Marco Polo Bridge incident', date: 1937, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Japanese%20Bombarded%20Wanping.gif', link: 'https://en.wikipedia.org/wiki/Marco_Polo_Bridge_incident' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.2167,  31.7833]}, properties: { title: 'Siege of Jerusalem', date: 1099, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/1099jerusalem.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Jerusalem_(1099)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[162.333333333,  -16.266666666]}, properties: { title: 'Battle of the Coral Sea', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/A%20heavy%20explosion%20on%20board%20USS%20Lexington%20%28CV-2%29%20blows%20an%20aircraft%20over%20her%20side%2C%208%20May%201942%20%2880-G-7413%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Coral_Sea' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[14.319444444,  50.078333333]}, properties: { title: 'Battle of White Mountain', date: 1620, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Schlacht%20am%20Wei%C3%9Fen%20Berg%20C-K%20063.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_White_Mountain' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[13.813888888,  41.49]}, properties: { title: 'Battle of Monte Cassino', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20ruins%20of%20Cassino%2C%20May%201944-%20a%20wrecked%20Sherman%20tank%20and%20Bailey%20bridge%20in%20the%20foreground%2C%20with%20Monastery%20Ridge%20and%20Castle%20Hill%20in%20the%20background.%20TR1799.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Monte_Cassino' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[26.6,  41.8]}, properties: { title: 'Battle of Adrianople', date: 378, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Batalla%20de%20Adrian%C3%B3polis.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Adrianople' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[27.883333333,  43.216666666]}, properties: { title: 'Battle of Varna', date: 1444, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Varna%201444.PNG', link: 'https://en.wikipedia.org/wiki/Battle_of_Varna' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[22.8475,  38.495]}, properties: { title: 'Battle of Chaeronea', date: -337, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Chaeronea%2C%20338%20BC.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Chaeronea_(338_BC)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[28.942777777,  30.841388888]}, properties: { title: 'Second Battle of El Alamein', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Montgomery%20watches%20his%20tanks%20move%20up.jpg', link: 'https://en.wikipedia.org/wiki/Second_Battle_of_El_Alamein' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[24.895833333,  43.705833333]}, properties: { title: 'Battle of Nicopolis', date: 1396, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/1396-Battle%20of%20Nicopolis.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Nicopolis' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[13.6425,  46.214444444]}, properties: { title: 'Battle of Caporetto', date: 1917, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Caporetto.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Caporetto' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[3.021111111,  50.900277777]}, properties: { title: 'Battle of Passchendaele', date: 1917, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Chateau%20Wood%20Ypres%201917.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Passchendaele' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[72.233333333,  42.525]}, properties: { title: 'Battle of Talas', date: 751, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Tang%20Dynasty%20circa%20700%20CE.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Talas' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[11.575,  50.95]}, properties: { title: 'Battle of Jena-Auerstedt', date: 1806, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Jena-Auerstedt%20-%20Map01.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Jena%E2%80%93Auerstedt' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[39.033333,  36.866667]}, properties: { title: 'Battle of Carrhae', date: -52, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Carrhae%20%28Caesar%CB%90%20A%20History%20Of%20The%20Art%20Of%20War%20Among%20The%20Romans%20Down%20To%20The%20End%2C%20vol.%20II%2C%201892%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Carrhae' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[2.29642,  48.8735]}, properties: { title: 'Liberation of Paris', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Paris1944.jpg', link: 'https://en.wikipedia.org/wiki/Liberation_of_Paris' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[27.242222222,  40.228055555]}, properties: { title: 'Battle of the Granicus', date: -333, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Charles%20Le%20Brun%2C%20Le%20Passage%20du%20Granique%2C%201665.png', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Granicus' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[125.355,  10.37]}, properties: { title: 'Battle of Leyte Gulf', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/USS%20Princeton%20%28CVL-23%29%20burning%20on%2024%20October%201944%20%2880-G-287970%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Leyte_Gulf' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[136.4616,  35.3705]}, properties: { title: 'Battle of Sekigahara', date: 1600, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Sekigaharascreen.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Sekigahara' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[37.495686,  47.250789]}, properties: { title: 'Battle of the Kalka River', date: 1223, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/%D0%91%D0%B8%D1%82%D0%B2%D0%B0%20%D0%BD%D0%B0%20%D0%9A%D0%B0%D0%BB%D0%BA%D0%B5.png', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Kalka_River' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[30.116666666,  31.333333333]}, properties: { title: 'Battle of the Nile', date: 1798, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Seeschlacht%20bei%20Abukir.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Nile' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[27.5,  58.233333333]}, properties: { title: 'Battle on the Ice', date: 1242, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Facial%20Chronicle%20-%20b.06%2C%20p.083%20-%20Battle%20of%20the%20Ice.jpg', link: 'https://en.wikipedia.org/wiki/Battle_on_the_Ice' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[28.942777777,  30.841388888]}, properties: { title: 'First Battle of El Alamein', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/1stAlameinBritDefense.jpg', link: 'https://en.wikipedia.org/wiki/First_Battle_of_El_Alamein' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-3.549027777,  38.343]}, properties: { title: 'Battle of Las Navas de Tolosa', date: 1212, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Batalla%20de%20las%20Navas%20de%20Tolosa%2C%20por%20Francisco%20van%20Halen.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Las_Navas_de_Tolosa' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.8167,  52.3]}, properties: { title: 'Battle of Warsaw', date: 1920, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Polish-soviet%20war%201920%20Aftermath%20of%20Battle%20of%20Warsaw.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Warsaw_(1920)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[37.563888888,  47.130555555]}, properties: { title: 'Siege of Mariupol', date: 2022, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Russian%20bombing%20of%20Mariupol%20%2803%29.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Mariupol' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[12.466944444,  41.935555555]}, properties: { title: 'Battle of the Milvian Bridge', date: 312, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20at%20the%20Milvian%20Bridge%2C%20G%C3%A9rard%20Audran%20after%20Charles%20Le%20Brun%2C%201666-crop.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Milvian_Bridge' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[24.061111111,  35.5]}, properties: { title: 'Battle of Crete', date: 1941, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/German%20assault%20on%20Crete.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Crete' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[22.38333333,  39.3]}, properties: { title: 'Battle of Pharsalus', date: -47, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Pharsalus%2C%2048%20BC.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Pharsalus' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[4.944444444,  49.7]}, properties: { title: 'Battle of Sedan', date: 1870, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Karte%20zur%20Schlacht%20bei%20Sedan%20%2801.09.1870%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Sedan' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[76.97,  29.39]}, properties: { title: 'First Battle of Panipat', date: 1526, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20battle%20of%20Panipat%20and%20the%20death%20of%20Sultan%20Ibr%C4%81h%C4%ABm%2C%20the%20last%20of%20the%20L%C5%8Dd%C4%AB%20Sultans%20of%20Delhi.jpg', link: 'https://en.wikipedia.org/wiki/First_Battle_of_Panipat' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[1.083333333,  49.933333333]}, properties: { title: 'Dieppe Raid', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bundesarchiv%20Bild%20101I-362-2211-04%2C%20Dieppe%2C%20Landungsversuch%2C%20englischer%20Sp%C3%A4hpanzer.jpg', link: 'https://en.wikipedia.org/wiki/Dieppe_Raid' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[103.768888888,  1.3525]}, properties: { title: 'Fall of Singapore', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Singaporesurrender.jpg', link: 'https://en.wikipedia.org/wiki/Fall_of_Singapore' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[12.085,  43.1975]}, properties: { title: 'Battle of Lake Trasimene', date: -216, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Trasimene%20battlefield.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_Lake_Trasimene' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[38.973333333,  14.018888888]}, properties: { title: 'Battle of Adwa', date: 1896, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/COLLECTIE%20TROPENMUSEUM%20De%20slag%20bij%20Adua%20TMnr%205956-2.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Adwa' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[16.564444444,  48.299444444]}, properties: { title: 'Battle of Wagram', date: 1809, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Napoleon%20Wagram.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Wagram' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[3.23556,  50.1767]}, properties: { title: 'Battle of Cambrai', date: 1917, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bundesarchiv%20Bild%20104-0941A%2C%20Bei%20Cambrai%2C%20zerst%C3%B6rter%20englischer%20Panzer%20Mark%20I.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Cambrai_(1917)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-1.410277777,  52.591111111]}, properties: { title: 'Battle of Bosworth Field', date: 1485, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Bosworth%20by%20Philip%20James%20de%20Loutherbourg.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Bosworth_Field' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.466666666,  44.816666666]}, properties: { title: 'Siege of Belgrade', date: 1456, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Nandorfehervar.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Belgrade_(1456)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.326997222,  39.088852777]}, properties: { title: 'Battle of Chaldiran', date: 1514, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Sekumname1525%20Chaldiran%20battle.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Chaldiran' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-3.935,  56.13]}, properties: { title: 'Battle of Stirling Bridge', date: 1297, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Stirling%20Bridge.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Stirling_Bridge' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[28.975,  41.0125]}, properties: { title: 'Siege of Constantinople', date: 717, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Constantinople%20area%20map.svg', link: 'https://en.wikipedia.org/wiki/Siege_of_Constantinople_(717%E2%80%93718)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[31.2,  30.08333333]}, properties: { title: 'Battle of the Pyramids', date: 1798, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Francois-Louis-Joseph%20Watteau%20001.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Pyramids' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[36.316666666,  49.966666666]}, properties: { title: 'Third Battle of Kharkov', date: 1943, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Situation%20third%20battle%20of%20Kharkov.png', link: 'https://en.wikipedia.org/wiki/Third_Battle_of_Kharkov' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.216666666,  31.783333333]}, properties: { title: 'Siege of Jerusalem', date: 1187, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/BalianofIbelin1490.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Jerusalem_(1187)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[21.016666666,  54.45]}, properties: { title: 'Battle of Friedland', date: 1807, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Napoleon%20friedland.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Friedland' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-6.901389,  38.923056]}, properties: { title: 'Battle of Sagrajas', date: 1086, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/B%20Osma%2085v.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Sagrajas' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[16.222777777,  51.145277777]}, properties: { title: 'Battle of Legnica', date: 1241, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bitwa%20pod%20Legnic%C4%85.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Legnica' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[39.0167,  35.95]}, properties: { title: 'Battle of Siffin', date: 657, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Balami%20-%20Tarikhnama%20-%20Battle%20of%20Siffin%20%28cropped%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Siffin' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-6.21667,  36.6]}, properties: { title: 'Battle of Guadalete', date: 711, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20battle%20of%20Guadelete.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Guadalete' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-79.87496,  32.75241]}, properties: { title: 'Battle of Fort Sumter', date: 1861, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bombardment%20of%20Fort%20Sumter%2C%201861.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Fort_Sumter' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-3.76,  55.9875]}, properties: { title: 'Battle of Falkirk', date: 1298, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20Bishop%20of%20Durham%27s%20Charge%20at%20Falkirk.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Falkirk' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[21.687777777,  36.935833333]}, properties: { title: 'Battle of Navarino', date: 1827, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Navarino.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Navarino' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[9.6,  45.05]}, properties: { title: 'Battle of the Trebia', date: -217, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battleofthetrebiamap.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Trebia' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[6.083333333,  50.776388888]}, properties: { title: 'Battle of Aachen', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/GI%20machine%20gun%20crew%20in%20Aachen%20%28Correct%20orientation%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Aachen' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[10.566388888,  45.367222222]}, properties: { title: 'Battle of Solferino', date: 1859, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Napol%C3%A9on%20III%20%C3%A0%20la%20bataille%20de%20Solf%C3%A9rino..jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Solferino' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[10.9,  48.366666666]}, properties: { title: 'Battle of Lechfeld', date: 955, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Lechfeld1457.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Lechfeld' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.633333333,  54.4]}, properties: { title: 'Battle of Eylau', date: 1807, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Prussia-Eylau.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_Eylau' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[37.128121,  49.229992]}, properties: { title: 'Second Battle of Kharkov', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Eastern%20Front%201941-12%20to%201942-05.png', link: 'https://en.wikipedia.org/wiki/Second_Battle_of_Kharkov' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[30.5164,  50.4536]}, properties: { title: 'Battle of Kiev', date: 1941, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Eastern%20Front%201941-06%20to%201941-09.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Kiev_(1941)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.5,  31.583333]}, properties: { title: 'Battle of al-Qadisiyyah', date: 636, image: 'tp://www.wikidata.org/entity/Q836844', link: 'https://en.wikipedia.org/wiki/Battle_of_al-Qadisiyyah' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[47.8167,  30.5]}, properties: { title: 'Battle of the Camel', date: 656, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Ali%20and%20Aisha%20at%20the%20Battle%20of%20the%20Camel.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Camel' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-76.5025,  37.230833333]}, properties: { title: 'Siege of Yorktown', date: 1781, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Surrender%20of%20Lord%20Cornwallis.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Yorktown' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[10.6,  48.645]}, properties: { title: 'Battle of Blenheim', date: 1704, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Duke-of-Marlborough-signing-Despatch-Blenheim-Bavaria-1704.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Blenheim' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[130.0,  20.0]}, properties: { title: 'Battle of the Philippine Sea', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Japanese%20aircraft%20carrier%20Zuikaku%20and%20two%20destroyers%20under%20attack%20on%2020%20June%201944%20%2880-G-238025%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Philippine_Sea' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[30.604166666,  59.8075]}, properties: { title: 'Battle of the Neva', date: 1240, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Alexander%20Nevsky%20Striking%20Birger%20Jarl.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Neva' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-4.980669444,  43.273372222]}, properties: { title: 'Battle of Covadonga', date: 718, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Don%20Pelayo.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Covadonga' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[4.767222222,  49.080277777]}, properties: { title: 'Battle of Valmy', date: 1792, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Valmy%20Battle%20painting.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Valmy' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[3.275833333,  50.828888888]}, properties: { title: 'Battle of the Golden Spurs', date: 1302, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Goedendag%20on%20chest%20of%20Kortrijk.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Golden_Spurs' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[28.18,  59.375]}, properties: { title: 'Battle of Narva', date: 1700, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Narva%20%28Gustaf%20Cederstr%C3%B6m%29%20-%20Nationalmuseum%20-%2018638.tif', link: 'https://en.wikipedia.org/wiki/Battle_of_Narva_(1700)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[32.045278,  54.782778]}, properties: { title: 'Battle of Smolensk', date: 1941, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Eastern%20Front%201941-06%20to%201941-09.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Smolensk_(1941)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[1.90889,  47.9025]}, properties: { title: 'Siege of Orleans', date: 1428, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Lenepveu%2C%20Jeanne%20d%27Arc%20au%20si%C3%A8ge%20d%27Orl%C3%A9ans.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Orl%C3%A9ans' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[33.57309444,  44.57175833]}, properties: { title: 'Battle of Balaclava', date: 1854, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Charge%20of%20the%20Light%20Brigade.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Balaclava' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-77.744722222,  39.473333333]}, properties: { title: 'Battle of Antietam', date: 1862, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Kurz%20%26%20Allison%20-%20Battle%20of%20Antietam.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Antietam' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-4.0925,  57.477222222]}, properties: { title: 'Battle of Culloden', date: 1746, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20culloden.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_Culloden' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[30.204166666,  45.255]}, properties: { title: 'Snake Island campaign', date: 2022, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Zmeinyi-sea.JPG', link: 'https://en.wikipedia.org/wiki/Snake_Island_campaign' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[38.0,  48.595]}, properties: { title: 'Battle of Bakhmut', date: 2022, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bakhmut%20after%20Russian%20shelling%2C%202022-09-15%20%2815%29.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Bakhmut' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[24.28638889,  41.01305556]}, properties: { title: 'Battle of Philippi', date: -41, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Phil2.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Philippi' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-71.060777777,  42.376361111]}, properties: { title: 'Battle of Bunker Hill', date: 1775, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20Death%20of%20General%20Warren%20at%20the%20Battle%20of%20Bunker%27s%20Hill.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Bunker_Hill' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[9.165,  45.1975]}, properties: { title: 'Battle of Pavia', date: 1525, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Pavia%20-%20Unknown%20Artist%20-%20Google%20Cultural%20Institute.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Pavia' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[15.83,  50.21]}, properties: { title: 'Battle of Koniggratz', date: 1866, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/1866%20prinz-friedrich-karl-bei-koeniggraetz%201b-640x428.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_K%C3%B6niggr%C3%A4tz' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[19.040833333,  47.498333333]}, properties: { title: 'Siege of Budapest', date: 1944, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/BUDAPEST%2045%20II.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Budapest' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[2.940555555,  50.899444444]}, properties: { title: 'Second Battle of Ypres', date: 1915, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Ruins%20ypres.jpg', link: 'https://en.wikipedia.org/wiki/Second_Battle_of_Ypres' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[106.696111111,  10.778055555]}, properties: { title: 'Fall of Saigon', date: 1975, image: 'tp://www.wikidata.org/entity/Q482456', link: 'https://en.wikipedia.org/wiki/Fall_of_Saigon' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.184444444,  32.585277777]}, properties: { title: 'Battle of Megiddo', date: -1456, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/%D7%AA%D7%9C%20%D7%9E%D7%92%D7%99%D7%93%D7%95.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_Megiddo_(15th_century_BC)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-77.6484,  38.3105]}, properties: { title: 'Battle of Chancellorsville', date: 1863, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Schlacht%20bei%20Chancellorsville%202.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Chancellorsville' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[3.375,  51.35]}, properties: { title: 'Battle of Sluys', date: 1340, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/BattleofSluys.jpeg', link: 'https://en.wikipedia.org/wiki/Battle_of_Sluys' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-6.423611111,  53.723055555]}, properties: { title: 'Battle of the Boyne', date: 1690, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/De%20slag%20aan%20de%20Boyne%20%28Ierland%29%20tussen%20Jacobus%20II%20en%20Willem%20III%2C%2012%20juli%201690%20Rijksmuseum%20SK-A-605.jpeg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Boyne' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[27.1574,  37.6909]}, properties: { title: 'Battle of Mycale', date: -478, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Mycale3%20map.gif', link: 'https://en.wikipedia.org/wiki/Battle_of_Mycale' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[18.9625,  45.37416667]}, properties: { title: 'Battle of Vukovar', date: 1991, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Croatian%20War%201991%20Vukovar%20destroyed%20tank.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Vukovar' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[5.572222222,  50.473888888]}, properties: { title: 'Battle of Liege', date: 1914, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Li%C3%A9ge%20-%201914%20-%20Soldats%20d%27infanterie%20prenant%20part%20%C3%A0%20la%20d%C3%A9fense%20de%20Li%C3%A8ge%20dans%20les%20faubourgs%20d%27Herstal.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Li%C3%A8ge' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[20.913055555,  47.977777777]}, properties: { title: 'Battle of Mohi', date: 1241, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Batalla%20de%20mohi.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Mohi' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-56.166388888,  -52.499444444]}, properties: { title: 'Battle of the Falkland Islands', date: 1914, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20the%20Falkland%20Islands%2C%201914.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_Falkland_Islands' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-47.0,  -32.0]}, properties: { title: 'Battle of the River Plate', date: 1939, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/DKM%20Admiral%20Graf%20Spee.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_the_River_Plate' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[9.316666666,  45.366666666]}, properties: { title: 'Battle of Marignano', date: 1515, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Marignano.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Marignano' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[23.174277777,  38.264666666]}, properties: { title: 'Battle of Leuctra', date: -370, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Leuctra%20ua.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_Leuctra' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[34.846944444,  31.699722222]}, properties: { title: 'Battle of Montgisard', date: 1177, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Schlacht%20von%20Montgisard%202.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Montgisard' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[34.92,  31.86]}, properties: { title: 'Battle of Montgisard', date: 1177, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Schlacht%20von%20Montgisard%202.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Montgisard' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[26.035,  40.73055556]}, properties: { title: 'Battle of Maritsa', date: 1371, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Feudal%20fragmentation%20of%20Bulgaria%20and%20fall%20under%20Ottoman%20rule.png', link: 'https://en.wikipedia.org/wiki/Battle_of_Maritsa' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.6972,  31.0333]}, properties: { title: 'Battle of Mu\'tah', date: 629, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Muta-battle-place.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Mu%27tah' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[43.135833333,  36.337222222]}, properties: { title: 'Battle of Mosul', date: 2016, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Mosul%20%282016%E2%80%9317%29.svg', link: 'https://en.wikipedia.org/wiki/Battle_of_Mosul_(2016%E2%80%932017)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[23.45,  31.95]}, properties: { title: 'Battle of Gazala', date: 1942, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bundesarchiv%20Bild%20101I-784-0246-22A%2C%20Nordafrika%2C%20Rommel%20im%20Befehlsfahrzeug%20%22Greif%22.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Gazala' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[30.99,  38.95]}, properties: { title: 'Battle of Ipsus', date: -300, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Lisymachus%2C%20marble%20-%20Ephesus%20Museum.JPG', link: 'https://en.wikipedia.org/wiki/Battle_of_Ipsus' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[172.975555555,  1.426944444]}, properties: { title: 'Battle of Tarawa', date: 1943, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Tarawa.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Tarawa' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[12.156666666,  51.267777777]}, properties: { title: 'Battle of Lutzen', date: 1632, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Death%20of%20King%20Gustav%20II%20Adolf%20of%20Sweden%20at%20the%20Battle%20of%20L%C3%BCtzen%20%28Carl%20Wahlbom%29%20-%20Nationalmuseum%20-%2018031.tif', link: 'https://en.wikipedia.org/wiki/Battle_of_L%C3%BCtzen_(1632)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[45.324722222,  2.0525]}, properties: { title: 'Battle of Mogadishu', date: 1993, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Black%20Hawk%20Down%20Super64%20over%20Mogadishu%20coast.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Mogadishu_(1993)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-77.5225,  38.815]}, properties: { title: 'First Battle of Bull Run', date: 1861, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Bull%20Run.jpg', link: 'https://en.wikipedia.org/wiki/First_Battle_of_Bull_Run' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[36.161388888,  36.202222222]}, properties: { title: 'Siege of Antioch', date: 1097, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/SiegeofAntioch.jpeg', link: 'https://en.wikipedia.org/wiki/Siege_of_Antioch' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[0.3333,  46.5833]}, properties: { title: 'Battle of Vouille', date: 507, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20between%20Clovis%20and%20the%20Visigoths.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Vouill%C3%A9' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[121.0,  15.0]}, properties: { title: 'Philippines campaign', date: 1941, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Burial%20detail%20at%20Camp%20O%27Donnell%20after%20Bataan%20Death%20March.jpg', link: 'https://en.wikipedia.org/wiki/Philippines_campaign_(1941%E2%80%931942)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[76.97,  29.39]}, properties: { title: 'Third Battle of Panipat', date: 1761, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/The%20Third%20battle%20of%20Panipat%2013%20January%201761.jpg', link: 'https://en.wikipedia.org/wiki/Third_Battle_of_Panipat' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-71.230833,  42.449639]}, properties: { title: 'Battles of Lexington and Concord', date: 1775, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Lexington%20Concord%20Siege%20of%20Boston.jpg', link: 'https://en.wikipedia.org/wiki/Battles_of_Lexington_and_Concord' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[16.2,  44.04]}, properties: { title: 'Operation Storm', date: 1995, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Map%2049%20-%20Croatia%20-%20Operation%20Oluja%2C%204-8%20August%201995.jpg', link: 'https://en.wikipedia.org/wiki/Operation_Storm' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[18.671388888,  54.4075]}, properties: { title: 'Battle of Westerplatte', date: 1939, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Bundesarchiv%20Bild%20183-2008-0513-500%2C%20Danzig%2C%20Westerplatte%2C%20Wald.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Westerplatte' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[39.2925,  25.698611111]}, properties: { title: 'Battle of Khaybar', date: undefined, image: 'undefined', link: 'https://en.wikipedia.org/wiki/Battle_of_Khaybar' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[128.06666667,  30.36666667]}, properties: { title: 'Operation Ten-Go', date: 1945, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Explosion%20of%20the%20Japanese%20battleship%20Yamato%2C%20on%207%20April%201945%20%28NH%2062582%29.jpg', link: 'https://en.wikipedia.org/wiki/Operation_Ten-Go' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[106.767,  19.7]}, properties: { title: 'Gulf of Tonkin incident', date: 1964, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/USS%20Maddox%20%28DD-731%29%20underway%20at%20sea%2C%20circa%20the%20early%201960s%20%28NH%2097900%29.jpg', link: 'https://en.wikipedia.org/wiki/Gulf_of_Tonkin_incident' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[35.08333333,  32.93333333]}, properties: { title: 'Siege of Acre', date: 1291, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/SiegeOfAcre1291.jpg', link: 'https://en.wikipedia.org/wiki/Siege_of_Acre_(1291)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[8.7424,  35.2596]}, properties: { title: 'Battle of Kasserine Pass', date: 1943, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Kasserine%20Pass.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Kasserine_Pass' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[42.573,  40.3381]}, properties: { title: 'Battle of Sarikamish', date: 1914, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Sarikam.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Sarikamish' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[34.558055555,  31.670555555]}, properties: { title: 'Battle of Ascalon', date: 1099, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Battle%20of%20Ascalon-engraving.jpg', link: 'https://en.wikipedia.org/wiki/Battle_of_Ascalon' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[18.428861111,  43.857916666]}, properties: { title: 'Assassination of Archduke Franz Ferdinand', date: 1914, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/DC-1914-27-d-Sarajevo-cropped.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Archduke_Franz_Ferdinand' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-96.8085,  32.779277777]}, properties: { title: 'Assassination of John F. Kennedy', date: 1963, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/JFK%20limousine.png', link: 'https://en.wikipedia.org/wiki/Assassination_of_John_F._Kennedy' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-77.02555556,  38.89638889]}, properties: { title: 'Assassination of Abraham Lincoln', date: 1865, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Assassination%20of%20President%20Lincoln%20%28color%29%20-%20Currier%20and%20Ives%20-%20Original.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Abraham_Lincoln' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[85.32,  27.7156]}, properties: { title: 'Nepalese royal massacre', date: 2001, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Narayanhiti%20Palace%20Museum.jpg', link: 'https://en.wikipedia.org/wiki/Nepalese_royal_massacre' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[73.0633,  33.6073]}, properties: { title: 'Assassination of Benazir Bhutto', date: 2007, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Benazir%20Bhutto.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Benazir_Bhutto' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-118.2971,  34.0597]}, properties: { title: 'Assassination of Robert F. Kennedy', date: 1968, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Robert%20F%20Kennedy%20crop.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Robert_F._Kennedy' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[12.47694444,  41.89527778]}, properties: { title: 'Assassination of Julius Caesar', date: -43, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Vincenzo%20Camuccini%2C%20The%20Death%20of%20Julius%20Caesar%20%28detail%29.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Julius_Caesar' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[69.11333333,  34.45472222]}, properties: { title: 'Tajbeg Palace assault', date: 1979, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Evstafiev-40th%20army%20HQ-Amin-palace-Kabul.jpg', link: 'https://en.wikipedia.org/wiki/Tajbeg_Palace_assault' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[77.206111111,  28.600277777]}, properties: { title: 'Assassination of Indira Gandhi', date: 1984, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Indira%20Gandhi%20-%20The%20location%20where%20Indira%20Gandhi%20was%20shot.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Indira_Gandhi' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[18.0628,  59.3366]}, properties: { title: 'Assassination of Olof Palme', date: 1986, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Olof%20Palme%20statsminister%2C%20tidigt%2070-tal.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Olof_Palme' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[65.795555555,  66.818611111]}, properties: { title: 'Death and funeral of Alexei Navalny', date: 2024, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Action%20in%20memory%20of%20Alexei%20Navalny%20in%20St.%20Petersburg%20on%20February%2016%2C%202024.jpg', link: 'https://en.wikipedia.org/wiki/Death_and_funeral_of_Alexei_Navalny' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-90.05757,  35.13454]}, properties: { title: 'Assassination of Martin Luther King Jr.', date: 1968, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Lorraine_Motel%2C_Memphis%2C_TN%2C_US.jpg/2560px-Lorraine_Motel%2C_Memphis%2C_TN%2C_US.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_Martin_Luther_King_Jr.' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-77.02027778,  38.89194444]}, properties: { title: 'Assassination of James A. Garfield', date: 1881, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/Garfield%20assassination%20engraving%20cropped.jpg', link: 'https://en.wikipedia.org/wiki/Assassination_of_James_A._Garfield' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-76.682578, 34.675835,]}, properties: { title: 'Queen Anne\'s Revenge', date: 1718, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Queen_Anne%27s_Revenge.JPG/440px-Queen_Anne%27s_Revenge.JPG', link: 'https://en.wikipedia.org/wiki/Queen_Anne%27s_Revenge'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-49.946944, 41.725556]}, properties: { title: 'Sinking of the Titanic', date: 1912, image: 'https://upload.wikimedia.org/wikipedia/commons/6/6e/St%C3%B6wer_Titanic.jpg', link: 'https://en.wikipedia.org/wiki/Sinking_of_the_Titanic'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[18.099443, 59.318857,]}, properties: { title: 'Sinking of Vasa', date: 1628, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/The_Vasa_from_the_Bow.jpg/2560px-The_Vasa_from_the_Bow.jpg', link: 'https://en.wikipedia.org/wiki/Vasa_(ship)'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-8.55, 51.416667]}, properties: { title: 'Sinking of the RMS Lusitania', date: 1915, image: 'https://upload.wikimedia.org/wikipedia/commons/8/81/Bundesarchiv_DVM_10_Bild-23-61-17%2C_Untergang_der_%22Lusitania%22.jpg', link: 'https://en.wikipedia.org/wiki/Sinking_of_the_RMS_Lusitania'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-6.397222, 49.865556,]}, properties: { title: 'Scilly Naval Disaster', date: 1707, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/HMS_Association_%281697%29.jpg/440px-HMS_Association_%281697%29.jpg', link: 'https://en.wikipedia.org/wiki/Scilly_naval_disaster_of_1707'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[129.694290, 33.642063]}, properties: { title: 'Mongol Invasion of Japan Disaster', date: 1274, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Kikuchi_Yoosai_-_Mongol_Invasion_%28m%C5%8Dko_sh%C5%ABrai%29_-_Tokyo_National_Museum.jpg/1024px-Kikuchi_Yoosai_-_Mongol_Invasion_%28m%C5%8Dko_sh%C5%ABrai%29_-_Tokyo_National_Museum.jpg', link: 'https://en.wikipedia.org/wiki/Mongol_invasions_of_Japan'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[14.447497, 36.872139]}, properties: { title: 'Sinking of the Roman Fleet', date: -255, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Il_mare_%22bicolore%22_di_Camarina.JPG/1920px-Il_mare_%22bicolore%22_di_Camarina.JPG', link:'https://en.wikipedia.org/wiki/Sinking_of_the_Roman_fleet_(255_BC)'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-67.175, 49.6375]}, properties: { title: 'Quebec Expedition', date: 1711, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Henry_St_John%2C_1st_Viscount_Bolingbroke_%281678-1751%29.jpg/440px-Henry_St_John%2C_1st_Viscount_Bolingbroke_%281678-1751%29.jpg', link: 'https://en.wikipedia.org/wiki/Quebec_expedition_(1711)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[107.069492, -2.415075]}, properties: { title: 'Sinking of Tek Sing', date: 1822, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/%D0%A1%D1%83%D0%B4%D0%BD%D0%BE_Tek_Sing.jpg/640px-%D0%A1%D1%83%D0%B4%D0%BD%D0%BE_Tek_Sing.jpg', link: 'https://en.wikipedia.org/wiki/Tek_Sing' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-90.114444, 35.190556]}, properties: { title: 'Sultana Disaster', date: 1865, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Ill-fated_Sultana%2C_Helena%2C_Arkansas%2C_April_27%2C_1865.jpg/600px-Ill-fated_Sultana%2C_Helena%2C_Arkansas%2C_April_27%2C_1865.jpg', link: 'https://en.wikipedia.org/wiki/Sultana_(steamboat)' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[13.304896, 121.587922]}, properties: { title: 'Sinking of MV Dona Paz', date: 1987, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Do%C3%B1a_Paz_at_Tacloban.jpg/2560px-Do%C3%B1a_Paz_at_Tacloban.jpg', link: 'https://en.wikipedia.org/wiki/MV_Do%C3%B1a_Paz'}},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[34.061083, 26.63945]}, properties: { title: 'Sinking of MV Salem Express', date: 1991, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/ScamaroniCGT1966.jpg/600px-ScamaroniCGT1966.jpg', link: 'https://en.wikipedia.org/wiki/MV_Salem_Express' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[-85.11, 46.998333,]}, properties: { title: 'Sinking of SS Edmund Fitzgerald', date: 1975, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Edmund_Fitzgerald%2C_1971%2C_3_of_4_%28restored%3B_cropped%29.jpg/600px-Edmund_Fitzgerald%2C_1971%2C_3_of_4_%28restored%3B_cropped%29.jpg', link: 'https://en.wikipedia.org/wiki/SS_Edmund_Fitzgerald' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[21.666667, 59.383333,]}, properties: { title: 'Sinking of MS Estonia', date: 1994, image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/MS_Estonia_model.jpg/600px-MS_Estonia_model.jpg', link: 'https://en.wikipedia.org/wiki/MS_Estonia' }},
+            /*{type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+            {type:'Feature', geometry: { type: 'Point', coordinates:[44.50916667,  40.19]}, properties: { title: 'Armenian parliament shooting', date: 1999, image: 'http://commons.wikimedia.org/wiki/Special:FilePath/ArmenianStamps-175a.jpg', link: 'https://en.wikipedia.org/wiki/Armenian_parliament_shooting' }},
+*/
+            ] 
+        }; 
+
+        let selectedMarker = null;
+
+        function increasePointSize(marker){
+
+        // Increase the size of the clicked marker
+        marker.style.width = '25px';
+        marker.style.height = '25px';
+
+        // Reset the size of the previously selected marker if any
+        if(selectedMarker && selectedMarker !== marker) {
+            selectedMarker.style.width = '15px';
+            selectedMarker.style.height = '15px';
+        }
+
+        // Update the selected marker
+        selectedMarker = marker;
+    }
+
+        // add markers to map
+        for (const feature of geojson.features) {
+            // create a HTML element for each feature
+            const el = document.createElement('div');
+            el.className = 'marker';
+
+            // make a marker for each feature and add to the map
+            new mapboxgl.Marker(el).setLngLat(feature.geometry.coordinates).addTo(map);
+            el.addEventListener("click", function(){
+                updateSidebarContent(feature.properties)
+                increasePointSize(el)
+            })
+        }   
+
+        async function updateSidebarContent(properties) {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.innerHTML = `
+                <h2> ${properties.title} </h2>
+                <img src = ${properties.image} alt = Image of Event></img>
+
+                <div class="description-container">
+                <img src="pin.png" alt="Pin Icon" class="icon">
+                <p class="description"> Year: ${properties.date} </p>
+                </div>
+                <a href=${properties.link} target="_blank"> Wikipedia: ${properties.title} </a>
+                `
+                // <h3> Wikipedia Content </h3>
+                // <div class = "content"> CONTENT </div>     
+            ;
+
+            //displayWikipediaContent(properties);
+        }
+
+        /*async function fetchWikipediaPage(properties) {
+            const pageTitle = properties.title;
+            const apiUrl = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&format=json&exintro&origin=*&titles=${pageTitle}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+                const pages = data.query.pages;
+                const pageId = Object.keys(pages)[0];
+                const page = pages[pageId];
+                return page.extract;
+            } catch (error) {
+                console.error('Error fetching Wikipedia page:', error);
+                return null;
+            }
+        }
+
+        async function displayWikipediaContent(properties) {
+            const pageURL = ${properties.link}; 
+            const content = await fetchWikipediaPage(propertiesL);
+            if (content) {
+                document.getElementById('content').innerHTML = content;
+            } else {
+                document.getElementById('content').innerHTML = 'Error loading content';
+            }
+        }
+        */
+        map.on('load', () => {
+            map.addSource('events', {
+                type: 'geojson',
+                data: 'WhatHappenedHere/events.geojson'
+            })
+        })
+    </script>
+</body>
+</html>
